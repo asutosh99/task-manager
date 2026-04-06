@@ -1,0 +1,75 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using task_manager.Data;
+using task_manager.DTO;
+using task_manager.Models;
+
+namespace task_manager.Services
+{
+    public class TaskService
+    {
+        private readonly AppDbContext _context;
+        public TaskService(AppDbContext context)
+        {
+            _context = context;
+        }
+        public async Task<List<TaskDTO>> GetTasks()
+        {
+            return await _context.Tasks.Select(t => new TaskDTO
+            {
+                Id=t.Id,
+                Status=t.Status,
+                Title=t.Title
+            }).ToListAsync();
+        }
+
+        public async Task<TaskDTO> GetTaskById(int id)
+        {
+            var task = await _context.Tasks.FindAsync(id);
+
+            if (task == null) return null;
+
+            return new TaskDTO
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Status = task.Status
+            };
+        }
+
+        public async Task<TaskItem> CreateTask(TaskItem item)
+        {
+            _context.Tasks.Add(item);
+           await _context.SaveChangesAsync();
+            return item;
+        }
+
+        public async Task<TaskItem> Update(int id, TaskItem updatedTask)
+        {
+            var existing = await _context.Tasks.FindAsync(id);
+
+            if (existing == null)
+                return null;
+
+            existing.Title = updatedTask.Title;
+            existing.Description = updatedTask.Description;
+            existing.Status = updatedTask.Status;
+
+            await _context.SaveChangesAsync();
+
+            return existing;
+        }
+
+        public async Task<bool> DeleteTask(int id)
+        {
+            var task = await _context.Tasks.FindAsync(id);
+            if (task == null)
+            {
+                return false;
+            }
+            _context.Tasks.Remove(task);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using task_manager.DTO;
 using task_manager.Models;
-using System.Collections.Generic;
-using System.Linq;
+using task_manager.Services;
 
 
 namespace task_manager.Controllers
@@ -9,44 +9,60 @@ namespace task_manager.Controllers
     [ApiController]
 
     [Route("api/[controller]")]
-    public class TasksController
+    public class TasksController : ControllerBase
     {
-        public static List<TaskItem> Tasks = new List<TaskItem>();
-        [HttpGet]
-        public ActionResult<List<TaskItem>> GetTasks()
+  
+        private readonly TaskService _taskService;
+
+        public TasksController(TaskService taskService)
         {
-            return Tasks;
+            _taskService = taskService;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<List<TaskDTO>>> GetAll()
+        {
+            var tasks = await _taskService.GetTasks();
+            return Ok(tasks);
         }
         [HttpPost]
-        public ActionResult<TaskItem> CreateTask(TaskItem task)
+        public async Task<ActionResult<TaskItem>> Create(TaskItem task)
         {
-            task.Id = Tasks.Count + 1;
-            Tasks.Add(task);
-            return task;
+         
+           await _taskService.CreateTask(task);
+            return Ok(task);
         }
         [HttpPut("{id}")]
-        public ActionResult<TaskItem> UpdateTask(int id, TaskItem updatedTask)
+        public async Task<ActionResult<TaskItem>> Update(int id, TaskItem updatedTask)
         {
-            var task = Tasks.FirstOrDefault(t => t.Id == id);
-            if (task == null)
+          var task =await _taskService.Update(id,updatedTask);
+            if(task == null)
             {
-                return new NotFoundResult();
+                return NotFound();
             }
-            task.Title = updatedTask.Title;
-            task.Description = updatedTask.Description;
-            task.Status = updatedTask.Status;
             return task;
         }
-        [HttpDelete("{id}")]
-        public ActionResult DeleteTask(int id)
+        
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TaskDTO>> GetById(int id)
         {
-            var task = Tasks.FirstOrDefault(t => t.Id == id);
-            if (task == null)
+            var task = await _taskService.GetTaskById(id);
+         if(task == null)
             {
-                return new NotFoundResult();
+                return NotFound();
             }
-            Tasks.Remove(task);
-            return new NoContentResult();
+            return Ok(task);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            var sucess= await _taskService.DeleteTask(id);
+            if(sucess == false)
+            {
+                return NotFound();
+            }
+            return Ok(sucess);
 
         }
     }

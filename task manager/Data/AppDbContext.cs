@@ -10,6 +10,6 @@ namespace task_manager.Data
         {
 
         }
-        public DbSet<Task> Tasks { get; set; }
+        public DbSet<TaskItem> Tasks { get; set; }
     }
 }

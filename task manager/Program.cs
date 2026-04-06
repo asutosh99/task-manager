@@ -1,5 +1,6 @@
-using task_manager.Data;
 using Microsoft.EntityFrameworkCore;
+using task_manager.Data;
+using task_manager.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<TaskService>();
 
 var app = builder.Build();
 

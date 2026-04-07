@@ -26,21 +26,35 @@ namespace task_manager.Controllers
             return Ok(tasks);
         }
         [HttpPost]
-        public async Task<ActionResult<TaskItem>> Create(TaskItem task)
+        public async Task<ActionResult<TaskDTO>> Create(CreateTaskDto dto)
         {
-         
-           await _taskService.CreateTask(task);
-            return Ok(task);
+           
+            TaskItem newTask = new TaskItem
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                Status = dto.Status
+            };
+            var created = await _taskService.CreateTask(newTask);
+            return Ok(created);
         }
         [HttpPut("{id}")]
-        public async Task<ActionResult<TaskItem>> Update(int id, TaskItem updatedTask)
+        public async Task<ActionResult<TaskDTO>> Update(int id, UpdateTaskDto dto)
         {
-          var task =await _taskService.Update(id,updatedTask);
+
+            var updatedTask = new TaskItem
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                Status = dto.Status
+            };
+
+            var task =await _taskService.Update(id,updatedTask);
             if(task == null)
             {
                 return NotFound();
             }
-            return task;
+            return Ok(task);
         }
         
         [HttpGet("{id}")]

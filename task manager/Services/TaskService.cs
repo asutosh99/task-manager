@@ -29,22 +29,25 @@ namespace task_manager.Services
 
             if (task == null) return null;
 
-            return new TaskDTO
-            {
-                Id = task.Id,
-                Title = task.Title,
-                Status = task.Status
-            };
+            return MapToDto(task);
         }
 
-        public async Task<TaskItem> CreateTask(TaskItem item)
+        public async Task<TaskDTO> CreateTask(CreateTaskDto dto)
         {
-            _context.Tasks.Add(item);
-           await _context.SaveChangesAsync();
-            return item;
+
+            var task = new TaskItem
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                Status = dto.Status
+            };
+            _context.Tasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            return MapToDto(task);
         }
 
-        public async Task<TaskItem> Update(int id, TaskItem updatedTask)
+        public async Task<TaskDTO> Update(int id, UpdateTaskDto updatedTask)
         {
             var existing = await _context.Tasks.FindAsync(id);
 
@@ -57,7 +60,7 @@ namespace task_manager.Services
 
             await _context.SaveChangesAsync();
 
-            return existing;
+            return MapToDto(existing);
         }
 
         public async Task<bool> DeleteTask(int id)
@@ -70,6 +73,16 @@ namespace task_manager.Services
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private TaskDTO MapToDto(TaskItem task)
+        {
+            return new TaskDTO
+            {
+                Id = task.Id,
+                Title = task.Title,
+                Status = task.Status
+            };
         }
     }
 }

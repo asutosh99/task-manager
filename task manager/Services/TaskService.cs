@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
 using Microsoft.EntityFrameworkCore;
 using task_manager.Data;
 using task_manager.DTO;
@@ -13,18 +13,32 @@ namespace task_manager.Services
         {
             _context = context;
         }
-        public async Task<List<TaskDTO>> GetTasks()
+        public async Task<(List<TaskDTO>,int TotalCount)> GetTasks(int page, int pageSize,string? status)
         {
-            return await _context.Tasks.Select(t => new TaskDTO
+            
+            var query = _context.Tasks.AsQueryable();
+            
+            if(!string.IsNullOrEmpty(status))
             {
-                Id=t.Id,
-                Status=t.Status,
-                Title=t.Title
-            }).ToListAsync();
+                query = query.Where(t => t.Status == status);
+            }
+
+            var  totalCounts= await query.CountAsync();
+                
+                var tasks =await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize).Select(t=> new TaskDTO
+                {
+                    Id=t.Id,
+                    Status=t.Status,
+                    Title=t.Title
+                }).ToListAsync();
+            return (tasks,totalCounts);
         }
 
         public async Task<TaskDTO> GetTaskById(int id)
         {
+            //throw new Exception("Test logging error");
             var task = await _context.Tasks.FindAsync(id);
 
             if (task == null) return null;

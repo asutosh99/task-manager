@@ -21,17 +21,24 @@ namespace task_manager.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<TaskDTO>>>> GetAll()
+        public async Task<ActionResult<PagedResponse<List<TaskDTO>>>> GetAll(int page=1, int pageSize=10,string? status=null)
         {
-            var tasks = await _taskService.GetTasks();
-            var response = new ApiResponse<List<TaskDTO>>
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            var (tasks,totalCounts) = await _taskService.GetTasks(page,pageSize, status);
+            var response = new PagedResponse<List<TaskDTO>>
             {
                 Success = true,
                 Message = "Tasks retrieved successfully",
-                Data = tasks
+                Data = tasks,
+                Page = page,
+                TotalCount = totalCounts,
+                TotalPages = (int)Math.Ceiling((double)totalCounts / pageSize)
             };
             return Ok(response);
         }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TaskDTO>>> Create(CreateTaskDto dto)
         {

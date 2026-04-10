@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using task_manager.Data;
+using task_manager.Middleware;
 using task_manager.Services;
 
 
@@ -26,6 +27,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
 

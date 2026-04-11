@@ -21,12 +21,17 @@ namespace task_manager.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PagedResponse<List<TaskDTO>>>> GetAll(int page=1, int pageSize=10,string? status=null)
+        public async Task<ActionResult<PagedResponse<List<TaskDTO>>>> GetAll(
+            int page=1, 
+            int pageSize=10,
+            string? status=null, 
+            string? sortBy=null, 
+            string? order="asc")
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var (tasks,totalCounts) = await _taskService.GetTasks(page,pageSize, status);
+            var (tasks,totalCounts) = await _taskService.GetTasks(page,pageSize, status,sortBy,order);
             var response = new PagedResponse<List<TaskDTO>>
             {
                 Success = true,
@@ -42,8 +47,6 @@ namespace task_manager.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TaskDTO>>> Create(CreateTaskDto dto)
         {
-           
-            
             var created = await _taskService.CreateTask(dto);
             return Ok(new ApiResponse<TaskDTO>
             {

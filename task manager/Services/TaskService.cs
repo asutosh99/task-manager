@@ -13,16 +13,41 @@ namespace task_manager.Services
         {
             _context = context;
         }
-        public async Task<(List<TaskDTO>,int TotalCount)> GetTasks(int page, int pageSize,string? status)
+        public async Task<(List<TaskDTO>,int TotalCount)> GetTasks(
+            int page, 
+            int pageSize,
+            string? status,
+            string? sortBy,
+            string? order)
         {
             
             var query = _context.Tasks.AsQueryable();
-            
+            //Filtering 
             if(!string.IsNullOrEmpty(status))
             {
                 query = query.Where(t => t.Status == status);
             }
+            //sorting
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                if (sortBy.ToLower()=="title")
+                {
+                    query = order == "desc" ?
+                        query.OrderByDescending(t => t.Title) :
+                        query.OrderBy(t => t.Title);
+                }
+                else if (sortBy.ToLower() == "status")
+                {
+                    query = order == "desc"
+                        ? query.OrderByDescending(t => t.Status)
+                        : query.OrderBy(t => t.Status);
+                }
+                else
+                {
+                    query = query.OrderBy(t => t.Id);
+                }
 
+            }
             var  totalCounts= await query.CountAsync();
                 
                 var tasks =await query

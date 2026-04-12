@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using task_manager.Data;
 using task_manager.DTO;
 using task_manager.Models;
@@ -13,7 +14,8 @@ namespace task_manager.Services
         {
             _context = context;
         }
-        public async Task<(List<TaskDTO>,int TotalCount)> GetTasks(
+        public async Task<(List<TaskDTO>,int TotalCount)> GetTasksByUser(
+            int userId,
             int page, 
             int pageSize,
             string? status,
@@ -21,7 +23,7 @@ namespace task_manager.Services
             string? order)
         {
             
-            var query = _context.Tasks.AsQueryable();
+            var query = _context.Tasks.Where(t => t.UserId == userId).AsQueryable();
             //Filtering 
             if(!string.IsNullOrEmpty(status))
             {
@@ -71,14 +73,15 @@ namespace task_manager.Services
             return MapToDto(task);
         }
 
-        public async Task<TaskDTO> CreateTask(CreateTaskDto dto)
+        public async Task<TaskDTO> CreateTask(CreateTaskDto dto,int userId)
         {
 
             var task = new TaskItem
             {
                 Title = dto.Title,
                 Description = dto.Description,
-                Status = dto.Status
+                Status = dto.Status,
+                UserId = userId
             };
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();

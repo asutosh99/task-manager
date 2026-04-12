@@ -1,6 +1,9 @@
 ﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using task_manager.DTO;
+
 using task_manager.Models;
 using task_manager.Services;
 
@@ -19,7 +22,7 @@ namespace task_manager.Controllers
         {
             _taskService = taskService;
         }
-
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResponse<List<TaskDTO>>>> GetAll(
             int page=1, 
@@ -28,10 +31,17 @@ namespace task_manager.Controllers
             string? sortBy=null, 
             string? order="asc")
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var (tasks,totalCounts) = await _taskService.GetTasks(page,pageSize, status,sortBy,order);
+            var (tasks,totalCounts) = await _taskService.GetTasksByUser(int.Parse(userId), page, pageSize, status, sortBy, order);
             var response = new PagedResponse<List<TaskDTO>>
             {
                 Success = true,
@@ -47,7 +57,9 @@ namespace task_manager.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TaskDTO>>> Create(CreateTaskDto dto)
         {
-            var created = await _taskService.CreateTask(dto);
+            var userId= User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
+            if (userId == null) { return Unauthorized(); }
+            var created = await _taskService.CreateTask(dto, int.Parse(userId));
             return Ok(new ApiResponse<TaskDTO>
             {
                 Success = true,

@@ -37,7 +37,6 @@ namespace task_manager.Controllers
             string? order="asc")
         {
             
-
             if (_currentUser.UserId == null)
             {
                 _logger.LogWarning("Unauthorized access attempt to GetAll tasks");

@@ -18,11 +18,13 @@ namespace task_manager.Controllers
   
         private readonly TaskService _taskService;
         private readonly CurrentUserService _currentUser;
+        private readonly ILogger<TasksController> _logger;
 
-        public TasksController(TaskService taskService, CurrentUserService currentUser)
+        public TasksController(TaskService taskService, CurrentUserService currentUser, ILogger<TasksController> logger)
         {
             _taskService = taskService;
             _currentUser = currentUser;
+            _logger = logger;
         }
 
         [Authorize]
@@ -38,6 +40,7 @@ namespace task_manager.Controllers
 
             if (_currentUser.UserId == null)
             {
+                _logger.LogWarning("Unauthorized access attempt to GetAll tasks");
                 return Unauthorized();
             }
             var userId = _currentUser.UserId.Value;
@@ -55,6 +58,7 @@ namespace task_manager.Controllers
                 TotalCount = totalCounts,
                 TotalPages = (int)Math.Ceiling((double)totalCounts / pageSize)
             };
+            _logger.LogInformation("Tasks retrieved successfully for user {UserId}", userId);
             return Ok(response);
         }
 
@@ -99,6 +103,7 @@ namespace task_manager.Controllers
             var task = await _taskService.GetTaskById(id);
          if(task == null)
             {
+                _logger.LogWarning("Task with id {TaskId} not found", id);
                 return NotFound(new ApiResponse<TaskDTO>
                 {
                     Success = false,
@@ -106,6 +111,7 @@ namespace task_manager.Controllers
                     Data = null
                 });
             }
+         _logger.LogInformation("Task with id {TaskId} retrieved successfully", id);
             return Ok(new ApiResponse<TaskDTO>
             {
                 Success = true,
@@ -114,6 +120,7 @@ namespace task_manager.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<string>>> Delete(int id)
         {

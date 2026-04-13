@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;    
+﻿using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;    
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,7 +7,7 @@ using System.Text;
 using task_manager.Data;
 using task_manager.DTO;
 using task_manager.Models;
-using BCrypt.Net;
+using static task_manager.DTO.AuthResponseDto;
 
 namespace task_manager.Services
 {
@@ -36,7 +37,7 @@ namespace task_manager.Services
             return "User registered successfully";
         }
 
-        public async Task<string> Login(LoginDto dto, IConfiguration config)
+        public async Task<AuthResponseDto> Login(LoginDto dto, IConfiguration config)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
@@ -69,8 +70,17 @@ namespace task_manager.Services
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: creds
             );
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return new AuthResponseDto
+            {
+                Token = tokenString,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email
+                }
+            };
         }
     }
 }

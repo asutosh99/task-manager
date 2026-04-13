@@ -44,12 +44,12 @@ namespace task_manager.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<ApiResponse<string>>> Login(LoginDto loginDto)
+        public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login(LoginDto loginDto)
         {
             var token = await _authService.Login(loginDto, _configuration);
             if (token == null)
             {
-                return Unauthorized(new ApiResponse<string>
+                return Unauthorized(new ApiResponse<AuthResponseDto>
                 {
                     Success = false,
                     Message = "Invalid email or password",
@@ -57,7 +57,7 @@ namespace task_manager.Controllers
                 });
             }
 
-            return Ok(new ApiResponse<string>
+            return Ok(new ApiResponse<AuthResponseDto>
             {
                 Success = true,
                 Message = "Login successful",

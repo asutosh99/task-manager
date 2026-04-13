@@ -17,11 +17,14 @@ namespace task_manager.Controllers
     {
   
         private readonly TaskService _taskService;
+        private readonly CurrentUserService _currentUser;
 
-        public TasksController(TaskService taskService)
+        public TasksController(TaskService taskService, CurrentUserService currentUser)
         {
             _taskService = taskService;
+            _currentUser = currentUser;
         }
+
         [Authorize]
         [HttpGet]
         public async Task<ActionResult<PagedResponse<List<TaskDTO>>>> GetAll(
@@ -31,17 +34,18 @@ namespace task_manager.Controllers
             string? sortBy=null, 
             string? order="asc")
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
 
-            if (userId == null)
+            if (_currentUser.UserId == null)
             {
                 return Unauthorized();
             }
+            var userId = _currentUser.UserId.Value;
 
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var (tasks,totalCounts) = await _taskService.GetTasksByUser(int.Parse(userId), page, pageSize, status, sortBy, order);
+            var (tasks,totalCounts) = await _taskService.GetTasksByUser(userId, page, pageSize, status, sortBy, order);
             var response = new PagedResponse<List<TaskDTO>>
             {
                 Success = true,

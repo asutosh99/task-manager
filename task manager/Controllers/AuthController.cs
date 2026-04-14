@@ -11,12 +11,10 @@ namespace task_manager.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AuthService _authService;
-        private readonly IConfiguration _configuration;
-
-        public AuthController(AuthService authService, IConfiguration configuration)
+        
+        public AuthController(AuthService authService)
         {
             _authService = authService;
-            _configuration = configuration;
         }
      
         [HttpPost("resgister")]
@@ -24,7 +22,7 @@ namespace task_manager.Controllers
         {
 
             var result = await _authService.Register(registerDto);
-            if (result == "User already exists")
+            if (!result)
             {
                 return BadRequest(new ApiResponse<string>
                 {
@@ -37,7 +35,7 @@ namespace task_manager.Controllers
             {
                 Success = true,
                 Message = "User registered successfully",
-                Data = result
+                Data = "User registered successfully"
             }
                 );
 
@@ -46,7 +44,7 @@ namespace task_manager.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login(LoginDto loginDto)
         {
-            var token = await _authService.Login(loginDto, _configuration);
+            var token = await _authService.Login(loginDto);
             if (token == null)
             {
                 return Unauthorized(new ApiResponse<AuthResponseDto>

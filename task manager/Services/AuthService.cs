@@ -14,17 +14,19 @@ namespace task_manager.Services
     public class AuthService
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _config;
 
-        public AuthService(AppDbContext context)
+        public AuthService(AppDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
-        public async Task<string> Register(RegisterDto registerDto)
+        public async Task<bool> Register(RegisterDto registerDto)
         {
             // Check if user already exists
             if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
             {
-                return null; // User already exists
+                return false; // User already exists
             }
             // Create new user
             var user = new User
@@ -34,18 +36,18 @@ namespace task_manager.Services
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return "User registered successfully";
+            return true;
         }
 
-        public async Task<AuthResponseDto> Login(LoginDto dto, IConfiguration config)
+        public async Task<AuthResponseDto> Login(LoginDto dto)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == dto.Email);
-            var Users = await _context.Users.Select(u => u.Email).ToListAsync();
+            
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
             {
-                return null;
+                throw new UnauthorizedAccessException("Invalid email or password");
             }
 
             // Create claims
@@ -58,15 +60,15 @@ namespace task_manager.Services
 
             //  Create key
             var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(config["Jwt:Key"])
+                Encoding.UTF8.GetBytes(_config["Jwt:Key"])
             );
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             // Create token
             var token = new JwtSecurityToken(
-                issuer: config["Jwt:Issuer"],
-                audience: config["Jwt:Audience"],
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: creds

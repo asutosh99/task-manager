@@ -3,15 +3,18 @@ using Microsoft.EntityFrameworkCore;
 using task_manager.Data;
 using task_manager.DTO;
 using task_manager.Models;
+using task_manager.Services;
 
 namespace task_manager.Services
 {
     public class TaskService
     {
         private readonly AppDbContext _context;
-        public TaskService(AppDbContext context)
+        private readonly CurrentUserService _currentUserService;
+        public TaskService(AppDbContext context, CurrentUserService currentUserService)
         {
             _context = context;
+            _currentUserService = currentUserService;
         }
         public async Task<(List<TaskDTO>,int TotalCount)> GetTasksByUser(
             int userId,
@@ -93,7 +96,10 @@ namespace task_manager.Services
             var existing = await _context.Tasks.FindAsync(id);
 
             if (existing == null)
-                return null;
+                throw new KeyNotFoundException("Task not found");
+
+            if (existing.UserId != _currentUserService.UserId && _currentUserService.UserRole != "Admin")
+                throw new UnauthorizedAccessException("You cannot update this task");
 
             existing.Title = updatedTask.Title;
             existing.Description = updatedTask.Description;
@@ -107,7 +113,10 @@ namespace task_manager.Services
         public async Task<bool> DeleteTask(int id)
         {
             var task = await _context.Tasks.FindAsync(id);
-            if (task == null)
+            if (task == null) { 
+                return false;
+            }
+            if (task.UserId != _currentUserService.UserId || _currentUserService.UserRole != "Admin")
             {
                 return false;
             }

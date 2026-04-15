@@ -1,19 +1,21 @@
-# 🚀 Task Manager API (.NET 8 + React + AI Ready)
+# 🚀 Task Manager API (.NET 8 + AI-Ready Backend)
+
+A production-style **Task Management Backend API** built with **ASP.NET Core (.NET 8)**, focusing on **security, clean architecture, and testable design**.
+
+---
 
 ## 📌 Overview
 
-This project is a **production-ready backend API** built using **ASP.NET Core (.NET 8)** following clean architecture principles.
+This project is a **secure, scalable backend system** that supports:
 
-It supports:
+* JWT-based authentication
+* Role-based authorization (User/Admin)
+* User-level data isolation (ownership validation)
+* Clean service-based architecture
+* Centralized exception handling
+* Unit & integration-style testing (~70–75% coverage)
 
-* Secure authentication (JWT)
-* User-based data isolation
-* Role-based authorization
-* Structured logging
-* Clean validation
-* Scalable architecture
-
-This backend is designed to be extended into a **full-stack AI-powered application**.
+Designed as a foundation for a **full-stack AI-powered system**.
 
 ---
 
@@ -23,34 +25,33 @@ This backend is designed to be extended into a **full-stack AI-powered applicati
 
 * JWT-based authentication
 * Password hashing using BCrypt
-* Role-based access control (User/Admin)
+* Role-based access (`User`, `Admin`)
 * Secure endpoints using `[Authorize]`
 
 ---
 
-### 👤 User Management
+### 🔥 Ownership-Based Security (Critical Feature)
 
-* Register & Login APIs
-* Secure password storage (hashed)
-* Role support (`User`, `Admin`)
+> Not just “is user logged in?” — but
+> **“Can this user access THIS resource?”**
+
+* Users can access only **their own tasks**
+* Admins can access **all tasks**
+
+```csharp
+if (task.UserId != currentUserId && role != "Admin")
+    throw new UnauthorizedAccessException();
+```
 
 ---
 
 ### 📋 Task Management
 
 * Create, Update, Delete tasks
-* Get tasks (user-specific)
+* Get user-specific tasks
 * Pagination
-* Filtering
-* Sorting
-
----
-
-### 🧾 API Design
-
-* DTO-based architecture
-* Standard API response format
-* Clean separation of concerns
+* Filtering (status)
+* Sorting (asc/desc)
 
 ---
 
@@ -58,7 +59,7 @@ This backend is designed to be extended into a **full-stack AI-powered applicati
 
 * FluentValidation for request validation
 * Centralized validation logic
-* Automatic model validation
+* No manual validation in controllers
 
 ---
 
@@ -66,14 +67,30 @@ This backend is designed to be extended into a **full-stack AI-powered applicati
 
 * Serilog integration
 * Structured logging
-* Console + File logging
+* Console + file output
 
 ---
 
-### ⚠️ Error Handling
+### ⚠️ Error Handling (Middleware-Based)
 
-* Global exception middleware
-* Consistent error responses
+All exceptions are handled centrally:
+
+| Exception                   | HTTP Code |
+| --------------------------- | --------- |
+| UnauthorizedAccessException | 401       |
+| KeyNotFoundException        | 404       |
+| ValidationException         | 400       |
+| Others                      | 500       |
+
+Example response:
+
+```json
+{
+  "success": false,
+  "message": "Task not found",
+  "data": null
+}
+```
 
 ---
 
@@ -81,16 +98,70 @@ This backend is designed to be extended into a **full-stack AI-powered applicati
 
 ```text
 Controller → Service → DbContext → Database
+                ↑
+         Interfaces (DI)
 ```
 
-### Layers:
+### Layers
 
-* **Controllers** → Handle HTTP requests
-* **Services** → Business logic
-* **DTOs** → Input/Output models
-* **Validators** → Input validation
-* **Middleware** → Exception handling
-* **Models** → Database entities
+* **Controllers**
+
+  * Handle HTTP requests/responses
+  * No business logic
+
+* **Services**
+
+  * Core business logic
+  * Authorization & ownership rules
+
+* **Interfaces**
+
+  * Decouple implementation
+  * Enable unit testing
+
+* **Middleware**
+
+  * Global exception handling
+
+* **DTOs**
+
+  * Request/response models only
+
+---
+
+## 👤 Current User Handling
+
+Abstracted via:
+
+```csharp
+ICurrentUserService
+```
+
+* Extracts user info from JWT claims
+* Used inside services (not controllers)
+* Makes business logic **testable**
+
+---
+
+## 🧪 Testing
+
+### Tools
+
+* xUnit
+* Moq
+* FluentAssertions
+* EF Core InMemory
+
+### Coverage
+
+* ~70–75% (focused on business logic)
+
+### What is tested
+
+* Task creation
+* Update authorization
+* Delete logic (user vs admin)
+* Not-found scenarios
 
 ---
 
@@ -100,38 +171,16 @@ Controller → Service → DbContext → Database
 task_manager/
 │
 ├── Controllers/
-│   ├── TasksController.cs
-│   └── AuthController.cs
-│
 ├── Services/
-│   ├── TaskService.cs
-│   ├── AuthService.cs
-│   └── CurrentUserService.cs
-│
+├── Interfaces/
 ├── DTO/
-│   ├── CreateTaskDto.cs
-│   ├── UpdateTaskDto.cs
-│   ├── LoginDto.cs
-│   ├── RegisterDto.cs
-│   ├── TaskDTO.cs
-│   └── Validators/
-│       ├── CreateTaskDtoValidator.cs
-│       ├── UpdateTaskDtoValidator.cs
-│       ├── LoginDtoValidator.cs
-│       └── RegisterDtoValidator.cs
-│
 ├── Models/
-│   ├── TaskItem.cs
-│   └── User.cs
-│
 ├── Data/
-│   └── AppDbContext.cs
-│
 ├── Middleware/
-│   └── ExceptionMiddleware.cs
-│
 ├── Program.cs
 └── appsettings.json
+
+task_manager.Tests/
 ```
 
 ---
@@ -150,34 +199,12 @@ Client → Controller → Service → Database
 
 ## 🔐 Authentication Flow
 
-```text
 1. User logs in
 2. Server validates credentials
 3. JWT token generated
 4. Client sends token in header
 5. Backend validates token
 6. Claims extracted (UserId, Role)
-```
-
----
-
-## 🔑 JWT Example
-
-```http
-Authorization: Bearer <your_token>
-```
-
----
-
-## 👤 Current User Access
-
-User info is extracted using:
-
-```csharp
-_currentUser.UserId
-```
-
-This avoids repeated claim extraction.
 
 ---
 
@@ -190,32 +217,14 @@ This avoids repeated claim extraction.
 | POST   | /api/auth/register | Register user |
 | POST   | /api/auth/login    | Login user    |
 
----
-
 ### Tasks
 
-| Method | Endpoint        | Description                   |
-| ------ | --------------- | ----------------------------- |
-| GET    | /api/tasks      | Get all tasks (user-specific) |
-| POST   | /api/tasks      | Create task                   |
-| PUT    | /api/tasks/{id} | Update task                   |
-| DELETE | /api/tasks/{id} | Delete task                   |
-
----
-
-## 📊 Pagination Example
-
-```http
-GET /api/tasks?page=1&pageSize=10
-```
-
----
-
-## 🔍 Filtering & Sorting
-
-```http
-GET /api/tasks?status=Completed&sortBy=title&order=desc
-```
+| Method | Endpoint        | Description    |
+| ------ | --------------- | -------------- |
+| GET    | /api/tasks      | Get user tasks |
+| POST   | /api/tasks      | Create task    |
+| PUT    | /api/tasks/{id} | Update task    |
+| DELETE | /api/tasks/{id} | Delete task    |
 
 ---
 
@@ -232,31 +241,14 @@ GET /api/tasks?status=Completed&sortBy=title&order=desc
 
 ## 🚀 How to Run
 
-### 1. Clone repository
-
 ```bash
-git clone (https://github.com/asutosh99/task-manager)
-```
-
----
-
-### 2. Setup database
-
-```bash
+git clone https://github.com/asutosh99/task-manager
+cd task_manager
 dotnet ef database update
-```
-
----
-
-### 3. Run project
-
-```bash
 dotnet run
 ```
 
----
-
-### 4. Open Swagger
+Swagger:
 
 ```text
 https://localhost:<port>/swagger
@@ -264,77 +256,86 @@ https://localhost:<port>/swagger
 
 ---
 
+## 🧪 Run Tests
+
+```bash
+dotnet test
+```
+
+---
+
 ## 🔒 Security Practices
 
-* Passwords hashed using BCrypt
-* JWT tokens with expiration
+* Password hashing (BCrypt)
+* JWT token expiration
 * Role-based authorization
-* User data isolation
+* Resource-level access control
+
+---
+
+## ⚠️ Known Limitations
+
+* No refresh tokens
+* No caching layer
+* No frontend yet
 
 ---
 
 ## 📈 Future Improvements
 
-### 🔥 Backend
+### Backend
 
 * Refresh tokens
-* Advanced logging (Serilog → Azure)
-* Caching (Redis)
+* Redis caching
+* Advanced logging (Azure)
 
----
-### currently working on - Al features , Frontend , and Devops
-### ⚛ Frontend
+### Frontend
 
-* React UI
+* React + TanStack Query
 * Protected routes
 * Token handling
 
----
-### 🤖 AI Features
+### AI Features
 
 * Task summarization
 * Smart suggestions
 * Priority prediction
-* Natural language task creation
 
----
+### DevOps
 
-### ☁️ DevOps
-
-* Dockerization
-* CI/CD pipeline
+* Docker
+* CI/CD
 * Azure deployment
-* Application Insights (Telemetry)
 
 ---
 
-## 🧠 Learning Highlights
+## 🧠 Engineering Principles Followed
 
-This project demonstrates:
-
-* Clean architecture design
-* Secure authentication implementation
-* Real-world API development practices
-* Scalable backend design
-
----
-
-## ⚠️ Notes for Future Developers / AI
-
-* Services contain business logic — do not move logic into controllers
-* DTOs are strictly for request/response — do not expose models directly
-* Validation is handled via FluentValidation — avoid manual validation
-* Authentication uses JWT — do not mix with session-based auth
-* Always use CurrentUserService for user context
+* Separation of concerns
+* Exception-driven flow
+* Interface-based design
+* Testable services
+* Resource-based authorization
 
 ---
 
 ## 👨‍💻 Author
 
-Built as part of a journey to become a **Full Stack AI Engineer** using:
+Built as part of transitioning from:
 
-* React
-* .NET
-* AI Integration
+**React Developer → .NET Full Stack Engineer (AI-focused)**
 
 ---
+
+## 🧨 Final Note
+
+This is not a tutorial-level CRUD app.
+
+It focuses on:
+
+* correctness
+* security
+* architecture
+* testability
+
+— not just “making it work”.

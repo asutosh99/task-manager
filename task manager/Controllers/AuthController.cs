@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using task_manager.DTO;
+using task_manager.Interfaces;
 using task_manager.Models;
 using task_manager.Services;
 
@@ -10,9 +11,9 @@ namespace task_manager.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
         
-        public AuthController(AuthService authService)
+        public AuthController(IAuthService authService)
         {
             _authService = authService;
         }
@@ -22,15 +23,15 @@ namespace task_manager.Controllers
         {
 
             var result = await _authService.Register(registerDto);
-            if (!result)
-            {
-                return BadRequest(new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "User already exist",
-                    Data = null
-                });
-            }
+            //if (!result)
+            //{
+            //    return BadRequest(new ApiResponse<string>
+            //    {
+            //        Success = false,
+            //        Message = "User already exist",
+            //        Data = null
+            //    });
+            //}
             return Ok(new ApiResponse<string>
             {
                 Success = true,
@@ -45,15 +46,15 @@ namespace task_manager.Controllers
         public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login(LoginDto loginDto)
         {
             var token = await _authService.Login(loginDto);
-            if (token == null)
-            {
-                return Unauthorized(new ApiResponse<AuthResponseDto>
-                {
-                    Success = false,
-                    Message = "Invalid email or password",
-                    Data = null
-                });
-            }
+            //if (token == null)
+            //{
+            //    return Unauthorized(new ApiResponse<AuthResponseDto>
+            //    {
+            //        Success = false,
+            //        Message = "Invalid email or password",
+            //        Data = null
+            //    });
+            //}
 
             return Ok(new ApiResponse<AuthResponseDto>
             {

@@ -1,7 +1,8 @@
 ﻿using System.Security.Claims;
+using task_manager.Interfaces;
 namespace task_manager.Services
 {
-    public class CurrentUserService
+    public class CurrentUserService : ICurrentUserService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 

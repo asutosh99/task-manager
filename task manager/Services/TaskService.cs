@@ -3,15 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using task_manager.Data;
 using task_manager.DTO;
 using task_manager.Models;
-using task_manager.Services;
+using task_manager.Interfaces;
 
 namespace task_manager.Services
 {
-    public class TaskService
+    public class TaskService: ITaskService
     {
         private readonly AppDbContext _context;
-        private readonly CurrentUserService _currentUserService;
-        public TaskService(AppDbContext context, CurrentUserService currentUserService)
+        private readonly ICurrentUserService _currentUserService;
+        public TaskService(AppDbContext context, ICurrentUserService currentUserService)
         {
             _context = context;
             _currentUserService = currentUserService;
@@ -116,7 +116,7 @@ namespace task_manager.Services
             if (task == null) { 
                 return false;
             }
-            if (task.UserId != _currentUserService.UserId || _currentUserService.UserRole != "Admin")
+            if (task.UserId != _currentUserService.UserId && _currentUserService.UserRole != "Admin")
             {
                 return false;
             }

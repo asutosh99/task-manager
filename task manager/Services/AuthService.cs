@@ -6,12 +6,13 @@ using System.Security.Claims;
 using System.Text;
 using task_manager.Data;
 using task_manager.DTO;
+using task_manager.Interfaces;
 using task_manager.Models;
 using static task_manager.DTO.AuthResponseDto;
 
 namespace task_manager.Services
 {
-    public class AuthService
+    public class AuthService: IAuthService
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;

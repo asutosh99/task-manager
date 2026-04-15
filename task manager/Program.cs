@@ -4,12 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Serilog;
 
 using System.Text;
 using task_manager.Data;
 using task_manager.Middleware;
 using task_manager.Services;
-using Serilog;
+using task_manager.Interfaces;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -56,9 +57,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 //services  
-builder.Services.AddScoped<TaskService>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<CurrentUserService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IAuthService,AuthService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

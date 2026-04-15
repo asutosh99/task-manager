@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using task_manager.DTO;
-
+using task_manager.Interfaces;
 using task_manager.Models;
 using task_manager.Services;
 
@@ -16,11 +16,11 @@ namespace task_manager.Controllers
     public class TasksController : ControllerBase
     {
   
-        private readonly TaskService _taskService;
+        private readonly ITaskService _taskService;
         private readonly CurrentUserService _currentUser;
         private readonly ILogger<TasksController> _logger;
 
-        public TasksController(TaskService taskService, CurrentUserService currentUser, ILogger<TasksController> logger)
+        public TasksController(ITaskService taskService, CurrentUserService currentUser, ILogger<TasksController> logger)
         {
             _taskService = taskService;
             _currentUser = currentUser;
@@ -79,15 +79,15 @@ namespace task_manager.Controllers
         {
 
             var task =await _taskService.Update(id,dto);
-            if(task == null)
-            {
-                return NotFound(new ApiResponse<TaskDTO>
-                {
-                    Success = false,
-                    Message = "Task not found",
-                    Data = null
-                });
-            }
+            //if(task == null)
+            //{
+            //    return NotFound(new ApiResponse<TaskDTO>
+            //    {
+            //        Success = false,
+            //        Message = "Task not found",
+            //        Data = null
+            //    });
+            //}
             return Ok(new ApiResponse<TaskDTO>
             {
                 Success = true,
@@ -100,16 +100,16 @@ namespace task_manager.Controllers
         public async Task<ActionResult<ApiResponse<TaskDTO>>> GetById(int id)
         {
             var task = await _taskService.GetTaskById(id);
-         if(task == null)
-            {
-                _logger.LogWarning("Task with id {TaskId} not found", id);
-                return NotFound(new ApiResponse<TaskDTO>
-                {
-                    Success = false,
-                    Message = "Task not found",
-                    Data = null
-                });
-            }
+         //if(task == null)
+         //   {
+         //       _logger.LogWarning("Task with id {TaskId} not found", id);
+         //       return NotFound(new ApiResponse<TaskDTO>
+         //       {
+         //           Success = false,
+         //           Message = "Task not found",
+         //           Data = null
+         //       });
+         //   }
          _logger.LogInformation("Task with id {TaskId} retrieved successfully", id);
             return Ok(new ApiResponse<TaskDTO>
             {

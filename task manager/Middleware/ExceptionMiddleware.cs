@@ -26,25 +26,52 @@ namespace task_manager.Middleware
                 _logger.LogError(ex, "Error occurred at {Path} with method {Method}",
                    context.Request.Path,
                    context.Request.Method);
-                await HandleException(context);
+                await HandleException(context, ex);
             }
         }
 
-        private static Task HandleException(HttpContext context)
+        private static async Task HandleException(HttpContext context, Exception ex)
         {
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+            int statusCode;
+            string message;
+
+            switch (ex)
+            {
+                case UnauthorizedAccessException:
+                    statusCode = StatusCodes.Status401Unauthorized;
+                    message = ex.Message;
+                    break;
+
+                case KeyNotFoundException:
+                    statusCode = StatusCodes.Status404NotFound;
+                    message = ex.Message;
+                    break;
+
+                case FluentValidation.ValidationException validationEx:
+                    statusCode = StatusCodes.Status400BadRequest;
+                    message = string.Join(", ", validationEx.Errors.Select(e => e.ErrorMessage));
+                    break;
+
+                default:
+                    statusCode = StatusCodes.Status500InternalServerError;
+                    message = "Something went wrong";
+                    break;
+            }
+
+            context.Response.StatusCode = statusCode;
 
             var response = new ApiResponse<string>
             {
                 Success = false,
-                Message = "Something went wrong",
+                Message = message,
                 Data = null
             };
 
             var json = JsonSerializer.Serialize(response);
 
-            return context.Response.WriteAsync(json);
+            await context.Response.WriteAsync(json);
         }
     }
 }

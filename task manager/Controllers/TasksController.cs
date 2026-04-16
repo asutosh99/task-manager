@@ -36,24 +36,18 @@ namespace task_manager.Controllers
             string? sortBy=null, 
             string? order="asc")
         {
-            
-            if (_currentUser.UserId == null)
-            {
-                _logger.LogWarning("Unauthorized access attempt to GetAll tasks");
-                return Unauthorized();
-            }
-            var userId = _currentUser.UserId.Value;
-
+            var userId = _currentUser.UserId;
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var (tasks,totalCounts) = await _taskService.GetTasksByUser(userId, page, pageSize, status, sortBy, order);
+            var (tasks,totalCounts) = await _taskService.GetTasksByUser( page, pageSize, status, sortBy, order);
             var response = new PagedResponse<List<TaskDTO>>
             {
                 Success = true,
                 Message = "Tasks retrieved successfully",
                 Data = tasks,
                 Page = page,
+                PageSize = pageSize,
                 TotalCount = totalCounts,
                 TotalPages = (int)Math.Ceiling((double)totalCounts / pageSize)
             };
@@ -61,12 +55,12 @@ namespace task_manager.Controllers
             return Ok(response);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<ApiResponse<TaskDTO>>> Create(CreateTaskDto dto)
         {
-            var userId= User.FindFirst(ClaimTypes.NameIdentifier)?.Value; 
-            if (userId == null) { return Unauthorized(); }
-            var created = await _taskService.CreateTask(dto, int.Parse(userId));
+            
+            var created = await _taskService.CreateTask(dto);
             return Ok(new ApiResponse<TaskDTO>
             {
                 Success = true,
@@ -74,20 +68,14 @@ namespace task_manager.Controllers
                 Data = created
             });
         }
+
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse<TaskDTO>>> Update(int id, UpdateTaskDto dto)
         {
 
             var task =await _taskService.Update(id,dto);
-            //if(task == null)
-            //{
-            //    return NotFound(new ApiResponse<TaskDTO>
-            //    {
-            //        Success = false,
-            //        Message = "Task not found",
-            //        Data = null
-            //    });
-            //}
+          _logger.LogInformation("Task with id {TaskId} updated successfully", id);
             return Ok(new ApiResponse<TaskDTO>
             {
                 Success = true,
@@ -95,21 +83,12 @@ namespace task_manager.Controllers
                 Data = task
             });
         }
-        
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<TaskDTO>>> GetById(int id)
         {
             var task = await _taskService.GetTaskById(id);
-         //if(task == null)
-         //   {
-         //       _logger.LogWarning("Task with id {TaskId} not found", id);
-         //       return NotFound(new ApiResponse<TaskDTO>
-         //       {
-         //           Success = false,
-         //           Message = "Task not found",
-         //           Data = null
-         //       });
-         //   }
+      
          _logger.LogInformation("Task with id {TaskId} retrieved successfully", id);
             return Ok(new ApiResponse<TaskDTO>
             {
@@ -119,25 +98,17 @@ namespace task_manager.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<string>>> Delete(int id)
         {
-            var sucess= await _taskService.DeleteTask(id);
-            if(sucess == false)
-            {
-                return NotFound(new ApiResponse<string>
-                {
-                    Success=false,
-                    Message = "Task not found",
-                    Data=null
-                });
-            }
+            await _taskService.DeleteTask(id);
+            _logger.LogInformation("Task with id {TaskId} deleted successfully", id);
             return Ok(new ApiResponse<string>
             {
                 Success = true,
                 Message = "Task deleted",
-                Data = null
+                Data = "deleted"
             });
 
         }

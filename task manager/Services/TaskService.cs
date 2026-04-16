@@ -17,14 +17,18 @@ namespace task_manager.Services
             _currentUserService = currentUserService;
         }
         public async Task<(List<TaskDTO>,int TotalCount)> GetTasksByUser(
-            int userId,
             int page, 
             int pageSize,
             string? status,
             string? sortBy,
             string? order)
         {
-            
+            var userId = _currentUserService.UserId;
+
+            if(userId == null) {
+                throw new UnauthorizedAccessException("User not authorized");
+            }
+
             var query = _context.Tasks.Where(t => t.UserId == userId).AsQueryable();
             //Filtering 
             if(!string.IsNullOrEmpty(status))
@@ -67,23 +71,32 @@ namespace task_manager.Services
 
         public async Task<TaskDTO> GetTaskById(int id)
         {
-            //throw new Exception("Test logging error");
             var task = await _context.Tasks.FindAsync(id);
+            if (task == null)
+            {
+                throw new KeyNotFoundException("Task not found");
+            }
+            if (task.UserId != _currentUserService.UserId && _currentUserService.UserRole != "Admin")
+                throw new UnauthorizedAccessException("You cannot access this task");
 
-            if (task == null) return null;
-
+           
             return MapToDto(task);
         }
 
-        public async Task<TaskDTO> CreateTask(CreateTaskDto dto,int userId)
+        public async Task<TaskDTO> CreateTask(CreateTaskDto dto)
         {
+            var userId = _currentUserService.UserId;
+
+            if(userId == null) {
+                throw new UnauthorizedAccessException("User not authorized");
+            }
 
             var task = new TaskItem
             {
                 Title = dto.Title,
                 Description = dto.Description,
                 Status = dto.Status,
-                UserId = userId
+                UserId = (int)userId
             };
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
@@ -110,19 +123,19 @@ namespace task_manager.Services
             return MapToDto(existing);
         }
 
-        public async Task<bool> DeleteTask(int id)
+        public async Task DeleteTask(int id)
         {
             var task = await _context.Tasks.FindAsync(id);
             if (task == null) { 
-                return false;
+                throw new KeyNotFoundException("Task not found");
             }
             if (task.UserId != _currentUserService.UserId && _currentUserService.UserRole != "Admin")
             {
-                return false;
+                throw new UnauthorizedAccessException("You cannot delete this task");
             }
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
-            return true;
+            
         }
 
         private TaskDTO MapToDto(TaskItem task)

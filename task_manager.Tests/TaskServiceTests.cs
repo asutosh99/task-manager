@@ -36,7 +36,7 @@ public class TaskServiceTests
             Status = "Pending"
         };
 
-        var result = await service.CreateTask(dto, 1);
+        var result = await service.CreateTask(dto);
 
         result.Should().NotBeNull();
         context.Tasks.Count().Should().Be(1);
@@ -87,9 +87,8 @@ public class TaskServiceTests
 
         var service = new TaskService(context, user.Object);
 
-        var result = await service.DeleteTask(task.Id);
+        await service.DeleteTask(task.Id);
 
-        result.Should().BeTrue();
     }
 
     [Fact]
@@ -99,8 +98,9 @@ public class TaskServiceTests
 
         var service = new TaskService(context, Mock.Of<ICurrentUserService>());
 
-        var result = await service.GetTaskById(999);
+        Func<Task> act = async () => await service.GetTaskById(999);
 
-        result.Should().BeNull();
+        await act.Should().ThrowAsync<KeyNotFoundException>()
+       .WithMessage("Task not found");
     }
 }

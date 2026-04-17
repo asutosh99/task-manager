@@ -1,51 +1,50 @@
 # 🚀 Task Manager API (.NET 8 + AI-Ready Backend)
 
-A production-style **Task Management Backend API** built with **ASP.NET Core (.NET 8)**, focusing on **security, clean architecture, and testable design**.
+A production-style Task Management Backend API built with ASP.NET Core (.NET 8), focusing on **security, clean architecture, testability, and real-world infrastructure readiness**.
 
 ---
 
-## 📌 Overview
+# 📌 Overview
 
-This project is a **secure, scalable backend system** that supports:
+This project is a secure, scalable backend system that supports:
 
 * JWT-based authentication
 * Role-based authorization (User/Admin)
-* User-level data isolation (ownership validation)
+* Resource-level (ownership) security
 * Clean service-based architecture
 * Centralized exception handling
-* Unit & integration-style testing (~70–75% coverage)
-
-Designed as a foundation for a **full-stack AI-powered system**.
+* Unit testing (~70–75% coverage)
+* Dockerized database setup (SQL Server)
+* Environment-based configuration (Dev/Prod)
 
 ---
 
-## 🧠 Key Features
+# 🧠 Key Features
 
-### 🔐 Authentication & Authorization
+## 🔐 Authentication & Authorization
 
 * JWT-based authentication
-* Password hashing using BCrypt
-* Role-based access (`User`, `Admin`)
+* BCrypt password hashing
+* Role-based access control
 * Secure endpoints using `[Authorize]`
 
 ---
 
-### 🔥 Ownership-Based Security (Critical Feature)
+## 🔥 Resource-Level Security (Critical)
 
-> Not just “is user logged in?” — but
-> **“Can this user access THIS resource?”**
-
-* Users can access only **their own tasks**
-* Admins can access **all tasks**
+Not just authentication — **authorization per resource**
 
 ```csharp
 if (task.UserId != currentUserId && role != "Admin")
     throw new UnauthorizedAccessException();
 ```
 
+* Users → only their own tasks
+* Admin → full access
+
 ---
 
-### 📋 Task Management
+## 📋 Task Management
 
 * Create, Update, Delete tasks
 * Get user-specific tasks
@@ -55,25 +54,15 @@ if (task.UserId != currentUserId && role != "Admin")
 
 ---
 
-### 🛡 Validation
+## 🛡 Validation
 
-* FluentValidation for request validation
+* FluentValidation
 * Centralized validation logic
 * No manual validation in controllers
 
 ---
 
-### 📊 Logging
-
-* Serilog integration
-* Structured logging
-* Console + file output
-
----
-
-### ⚠️ Error Handling (Middleware-Based)
-
-All exceptions are handled centrally:
+## ⚠️ Error Handling (Middleware-Based)
 
 | Exception                   | HTTP Code |
 | --------------------------- | --------- |
@@ -82,7 +71,7 @@ All exceptions are handled centrally:
 | ValidationException         | 400       |
 | Others                      | 500       |
 
-Example response:
+Example:
 
 ```json
 {
@@ -94,9 +83,17 @@ Example response:
 
 ---
 
-## 🏗 Architecture
+## 📊 Logging
 
-```text
+* Serilog
+* Structured logging
+* Console + file output
+
+---
+
+# 🏗 Architecture
+
+```
 Controller → Service → DbContext → Database
                 ↑
          Interfaces (DI)
@@ -104,34 +101,15 @@ Controller → Service → DbContext → Database
 
 ### Layers
 
-* **Controllers**
-
-  * Handle HTTP requests/responses
-  * No business logic
-
-* **Services**
-
-  * Core business logic
-  * Authorization & ownership rules
-
-* **Interfaces**
-
-  * Decouple implementation
-  * Enable unit testing
-
-* **Middleware**
-
-  * Global exception handling
-
-* **DTOs**
-
-  * Request/response models only
+* **Controllers** → HTTP handling only
+* **Services** → business logic + authorization
+* **Interfaces** → abstraction + testability
+* **Middleware** → global exception handling
+* **DTOs** → request/response models
 
 ---
 
-## 👤 Current User Handling
-
-Abstracted via:
+# 👤 Current User Handling
 
 ```csharp
 ICurrentUserService
@@ -139,11 +117,11 @@ ICurrentUserService
 
 * Extracts user info from JWT claims
 * Used inside services (not controllers)
-* Makes business logic **testable**
+* Enables testable business logic
 
 ---
 
-## 🧪 Testing
+# 🧪 Testing
 
 ### Tools
 
@@ -154,109 +132,160 @@ ICurrentUserService
 
 ### Coverage
 
-* ~70–75% (focused on business logic)
+~70–75% (business logic focused)
 
-### What is tested
+### Tested Scenarios
 
 * Task creation
-* Update authorization
-* Delete logic (user vs admin)
-* Not-found scenarios
+* Authorization (owner vs admin)
+* Delete logic
+* Not-found handling
 
 ---
 
-## 📂 Project Structure
+# 🔄 API Response Standard
 
-```text
-task_manager/
-│
-├── Controllers/
-├── Services/
-├── Interfaces/
-├── DTO/
-├── Models/
-├── Data/
-├── Middleware/
-├── Program.cs
-└── appsettings.json
+All responses follow:
 
-task_manager.Tests/
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {}
+}
+```
+
+Pagination:
+
+```json
+{
+  "success": true,
+  "data": [],
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": 50,
+  "totalPages": 5
+}
 ```
 
 ---
 
-## 🔄 Request Flow
+# ⚙️ Environment Configuration
 
-```text
-Client → Controller → Service → Database
-                         ↓
-                  Business Logic
-                         ↓
-                DTO Response → Client
+Supports environment-based configuration:
+
+* `appsettings.json` → base config
+* `appsettings.Development.json` → dev overrides
+* `appsettings.Production.json` → production
+* **User Secrets (dev)**
+* **Environment Variables (prod)**
+
+### Example (User Secrets)
+
+```bash
+dotnet user-secrets set "Jwt:Key" "your_secret"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "your_db"
+```
+
+### Example (Production Env Vars)
+
+```bash
+Jwt__Key=your_secret
+ConnectionStrings__DefaultConnection=your_db
 ```
 
 ---
 
-## 🔐 Authentication Flow
+# 🐳 Docker Setup (SQL Server)
 
-1. User logs in
-2. Server validates credentials
-3. JWT token generated
-4. Client sends token in header
-5. Backend validates token
-6. Claims extracted (UserId, Role)
+Run SQL Server in Docker:
 
----
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=StrongPass123!" -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2022-latest
+```
 
-## 🧪 API Endpoints
+Connection string:
 
-### Auth
-
-| Method | Endpoint           | Description   |
-| ------ | ------------------ | ------------- |
-| POST   | /api/auth/register | Register user |
-| POST   | /api/auth/login    | Login user    |
-
-### Tasks
-
-| Method | Endpoint        | Description    |
-| ------ | --------------- | -------------- |
-| GET    | /api/tasks      | Get user tasks |
-| POST   | /api/tasks      | Create task    |
-| PUT    | /api/tasks/{id} | Update task    |
-| DELETE | /api/tasks/{id} | Delete task    |
+```text
+Server=localhost,1433;Database=TaskFlowDb;User Id=sa;Password=StrongPass123!;TrustServerCertificate=True;
+```
 
 ---
 
-## ⚙️ Technologies Used
+# 🐳 Docker Compose (Full System)
 
-* ASP.NET Core (.NET 8)
-* Entity Framework Core
-* SQL Server
-* JWT Authentication
-* FluentValidation
-* Serilog
+```yaml
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "StrongPass123!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+
+  api:
+    build:
+      context: .
+      dockerfile: task manager/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=TaskFlowDb;User=sa;Password=StrongPass123!;
+      - Jwt__Key=dev_secret_key
+    depends_on:
+      - db
+```
+
+Run:
+
+```bash
+docker-compose up --build
+```
 
 ---
 
-## 🚀 How to Run
+# 🧪 API Endpoints
+
+## Auth
+
+| Method | Endpoint           | Description |
+| ------ | ------------------ | ----------- |
+| POST   | /api/auth/register | Register    |
+| POST   | /api/auth/login    | Login       |
+
+## Tasks
+
+| Method | Endpoint        | Description |
+| ------ | --------------- | ----------- |
+| GET    | /api/tasks      | Get tasks   |
+| POST   | /api/tasks      | Create      |
+| PUT    | /api/tasks/{id} | Update      |
+| DELETE | /api/tasks/{id} | Delete      |
+
+---
+
+# 🚀 How to Run (Dev)
 
 ```bash
 git clone https://github.com/asutosh99/task-manager
 cd task_manager
+dotnet user-secrets init
 dotnet ef database update
 dotnet run
 ```
 
 Swagger:
 
-```text
+```
 https://localhost:<port>/swagger
 ```
 
 ---
 
-## 🧪 Run Tests
+# 🧪 Run Tests
 
 ```bash
 dotnet test
@@ -264,16 +293,17 @@ dotnet test
 
 ---
 
-## 🔒 Security Practices
+# 🔒 Security Practices
 
-* Password hashing (BCrypt)
-* JWT token expiration
+* BCrypt password hashing
+* JWT expiration
 * Role-based authorization
 * Resource-level access control
+* Environment-based secrets
 
 ---
 
-## ⚠️ Known Limitations
+# ⚠️ Known Limitations
 
 * No refresh tokens
 * No caching layer
@@ -281,35 +311,29 @@ dotnet test
 
 ---
 
-## 📈 Future Improvements
+# 📈 Future Improvements
 
-### Backend
+## Backend
 
 * Refresh tokens
 * Redis caching
-* Advanced logging (Azure)
+* Rate limiting
 
-### Frontend
+## DevOps
 
-* React + TanStack Query
-* Protected routes
-* Token handling
+* CI/CD pipeline
+* Azure deployment
+* Docker optimization
 
-### AI Features
+## AI
 
 * Task summarization
 * Smart suggestions
 * Priority prediction
 
-### DevOps
-
-* Docker
-* CI/CD
-* Azure deployment
-
 ---
 
-## 🧠 Engineering Principles Followed
+# 🧠 Engineering Principles
 
 * Separation of concerns
 * Exception-driven flow
@@ -319,7 +343,7 @@ dotnet test
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 Built as part of transitioning from:
 
@@ -327,15 +351,13 @@ Built as part of transitioning from:
 
 ---
 
-## 🧨 Final Note
+# 🧨 Final Note
 
-This is not a tutorial-level CRUD app.
+This is NOT a tutorial CRUD app.
 
 It focuses on:
 
 * correctness
 * security
 * architecture
-* testability
-
-— not just “making it work”.
+* real-world backend practices

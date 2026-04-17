@@ -17,10 +17,10 @@ namespace task_manager.Controllers
     {
   
         private readonly ITaskService _taskService;
-        private readonly CurrentUserService _currentUser;
+        private readonly ICurrentUserService _currentUser;
         private readonly ILogger<TasksController> _logger;
 
-        public TasksController(ITaskService taskService, CurrentUserService currentUser, ILogger<TasksController> logger)
+        public TasksController(ITaskService taskService, ICurrentUserService currentUser, ILogger<TasksController> logger)
         {
             _taskService = taskService;
             _currentUser = currentUser;

@@ -89,7 +89,12 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod();
         });
 });
+var jwtKey = builder.Configuration["Jwt:Key"];
 
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new Exception("JWT Key is not configured");
+}
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
